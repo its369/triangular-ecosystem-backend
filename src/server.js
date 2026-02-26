@@ -1,3 +1,8 @@
+console.log('🚀 SERVER.JS STARTING...');
+console.log('PORT:', process.env.PORT);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'SET' : 'MISSING');
+
 import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
@@ -153,7 +158,10 @@ app.use(errorHandler);
 
 // Start server
 const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, () => {
+console.log('🔥 ABOUT TO START LISTENING ON PORT:', PORT);
+
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log('✅ SERVER IS LISTENING!');
   console.log(`
   ╔═══════════════════════════════════════════════════╗
   ║   🚀 Triangular Ecosystem Backend Server          ║
