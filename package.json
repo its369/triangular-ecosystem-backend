@@ -1,50 +1,41 @@
 {
-  "name": "triangular-ecosystem",
-  "displayName": "Triangular Ecosystem",
-  "description": "Full-stack HUSE Circle, Dofracto, and Quotify ecosystem platform",
+  "name": "triangular-ecosystem-backend",
+  "displayName": "Triangular Ecosystem Backend",
+  "description": "Backend API for Triangular Ecosystem",
   "version": "1.0.0",
   "type": "module",
-  "main": "./Backend/src/server.js",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
-    "setup": "bash setup.sh",
-    "setup:win": "setup.bat",
-    "docker:build": "docker-compose build --no-cache",
-    "docker:start": "docker-compose up -d",
-    "docker:stop": "docker-compose down",
-    "docker:logs": "docker-compose logs -f",
-    "docker:logs:backend": "docker-compose logs -f backend",
-    "docker:logs:frontend": "docker-compose logs -f frontend",
-    "docker:ps": "docker-compose ps",
-    "docker:restart": "docker-compose restart",
-    "docker:clean": "docker-compose down -v",
-    "backend:install": "cd Backend && npm install",
-    "backend:dev": "cd Backend && npm run dev",
-    "backend:start": "cd Backend && npm start",
-    "frontend:install": "cd Frontend && npm install",
-    "frontend:dev": "cd Frontend && npm run dev",
-    "frontend:build": "cd Frontend && npm run build",
-    "backup:db": "docker-compose exec mongodb mongodump --archive=/data/backup/mongo-backup.archive",
-    "health:check": "curl http://localhost:5000/health"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cookie-parser": "^1.4.6",
+    "express-validator": "^7.0.1",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.7",
+    "cloudinary": "^1.41.0",
+    "stripe": "^14.9.0",
+    "socket.io": "^4.6.0"
   },
   "keywords": [
     "ecosystem",
     "education",
-    "marketplace",
-    "opportunities",
-    "quotes",
-    "huse",
-    "dofracto",
-    "quotify"
+    "marketplace"
   ],
   "author": "Triangular Ecosystem",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/your-org/triangular-ecosystem.git"
-  },
-  "engines": {
-    "node": ">=20.0.0",
-    "npm": ">=9.0.0",
-    "docker": ">=24.0.0"
-  }
+  "license": "MIT"
 }
