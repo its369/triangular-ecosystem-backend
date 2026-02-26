@@ -157,8 +157,11 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Start server
-const PORT = process.env.PORT || 5000;
-console.log('🔥 ABOUT TO START LISTENING ON PORT:', PORT);
+// ✅ CORRECT
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Server listening on port ${PORT}`);
+});
 
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log('✅ SERVER IS LISTENING!');
