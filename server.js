@@ -33,33 +33,6 @@ const io = new Server(httpServer, {
 // Make io accessible to routes
 app.set('io', io);
 
-// Database connection with better error handling
-const connectDB = async () => {
-  try {
-    if (!process.env.MONGODB_URI) {
-      throw new Error('MONGODB_URI environment variable is not set!');
-    }
-
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    console.log(`📊 Database: ${conn.connection.name}`);
-  } catch (error) {
-    console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    console.error('⚠️  Server will continue but database features will not work!');
-    // Don't exit in production - let Railway show the error
-    if (process.env.NODE_ENV !== 'production') {
-      process.exit(1);
-    }
-  }
-};
-
-// Connect to database
-connectDB();
-
 // Security middleware
 app.use(helmet());
 app.use(mongoSanitize());
@@ -163,23 +136,19 @@ const loadRoute = async (path, routePath) => {
 io.on('connection', (socket) => {
   console.log(`🔌 User connected: ${socket.id}`);
 
-  // Join user's personal room
   socket.on('join', (userId) => {
     socket.join(`user:${userId}`);
     console.log(`👤 User ${userId} joined their room`);
   });
 
-  // Handle real-time messaging
   socket.on('send_message', (data) => {
     io.to(`user:${data.recipientId}`).emit('receive_message', data);
   });
 
-  // Handle typing indicators
   socket.on('typing', (data) => {
     socket.to(`user:${data.recipientId}`).emit('user_typing', data);
   });
 
-  // Handle notifications
   socket.on('send_notification', (data) => {
     io.to(`user:${data.userId}`).emit('new_notification', data);
   });
@@ -208,7 +177,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
+// Start server FIRST, then try MongoDB connection
 const PORT = process.env.PORT || 5000;
 console.log('🔥 ABOUT TO START LISTENING ON PORT:', PORT);
 
@@ -221,7 +190,7 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`📍 Port: ${PORT}`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Local URL: http://localhost:${PORT}`);
-  console.log(`💾 MongoDB: ${mongoose.connection.readyState === 1 ? 'Connected ✅' : 'Disconnected ❌'}`);
+  console.log(`💾 MongoDB: Connecting...`);
   console.log(`📡 API Version: ${API_VERSION}`);
   
   if (process.env.RAILWAY_ENVIRONMENT) {
@@ -231,6 +200,44 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   
   console.log('═══════════════════════════════════════════════════');
   console.log('');
+
+  // Connect to MongoDB AFTER server is listening
+  connectDB();
+});
+
+// Database connection - REMOVED DEPRECATED OPTIONS
+const connectDB = async () => {
+  if (!process.env.MONGODB_URI) {
+    console.error('❌ ERROR: MONGODB_URI environment variable is not set!');
+    console.log('⚠️  Server will continue but database features will not work!');
+    return;
+  }
+
+  try {
+    // REMOVED useNewUrlParser and useUnifiedTopology - they're deprecated
+    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    
+    console.log('✅ MongoDB Connected successfully!');
+    console.log(`📊 Database: ${conn.connection.name}`);
+    console.log(`🔗 Host: ${conn.connection.host}`);
+  } catch (error) {
+    console.error('❌ MongoDB Connection Error:', error.message);
+    console.log('⚠️  Server will continue but database features will not work!');
+    // DON'T exit - let the server continue running
+  }
+};
+
+// Handle MongoDB connection events
+mongoose.connection.on('error', (err) => {
+  console.error('❌ MongoDB error:', err.message);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.warn('⚠️  MongoDB disconnected');
+});
+
+mongoose.connection.on('connected', () => {
+  console.log('✅ MongoDB reconnected');
 });
 
 // Handle unhandled promise rejections
@@ -238,16 +245,31 @@ process.on('unhandledRejection', (err) => {
   console.error(`❌ Unhandled Rejection: ${err.message}`);
   console.error(err.stack);
   
-  // Close server gracefully
-  httpServer.close(() => {
-    console.log('⚠️  Server closed due to unhandled rejection');
-    process.exit(1);
-  });
+  // DON'T close server on MongoDB errors in production
+  if (process.env.NODE_ENV !== 'production') {
+    httpServer.close(() => {
+      console.log('⚠️  Server closed due to unhandled rejection');
+      process.exit(1);
+    });
+  }
 });
 
 // Handle SIGTERM (Railway shutdown signal)
 process.on('SIGTERM', () => {
   console.log('⚠️  SIGTERM received, shutting down gracefully...');
+  
+  httpServer.close(() => {
+    console.log('✅ Server closed');
+    mongoose.connection.close(false, () => {
+      console.log('✅ MongoDB connection closed');
+      process.exit(0);
+    });
+  });
+});
+
+// Handle SIGINT (Ctrl+C)
+process.on('SIGINT', () => {
+  console.log('⚠️  SIGINT received, shutting down gracefully...');
   
   httpServer.close(() => {
     console.log('✅ Server closed');
