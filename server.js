@@ -6,6 +6,7 @@ console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'SET' : 'MISSING');
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
+import authRoutes from './routes/auth.routes.js';
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.get('/api/test', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+app.use('/api/v1/auth', authRoutes);
 
 // 404 handler
 app.use((req, res) => {
